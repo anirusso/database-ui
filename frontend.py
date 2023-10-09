@@ -1,8 +1,12 @@
 from tkinter import *
+from backend import Database
 
 class Window(object):
 
-    def __init__(self, window, tablename, columns):
+    def __init__(self, window, db, tablename, columns):
+
+        #SETTING UP WINDOW
+
         self.window = window
         self.window.wm_title(tablename)
 
@@ -53,17 +57,22 @@ class Window(object):
         selectLbl.grid(row=4, column=0, columnspan=2, pady=5, sticky="W")
 
         rownum = 5
+        self.col_values = list(range(len(columns)))
+        self.col_entries = list(range(len(columns)))
+        colnum = 0
 
         for col in columns:
+
             nameLbl = Label(window, text=str(col))
             nameLbl.grid(row=rownum, column=0)
 
-            self.nameVar = StringVar()
-            self.nameEntry = Entry(window, textvariable=self.nameVar)
-            self.nameEntry.grid(row=rownum, column=1)
+            self.col_values[colnum] = StringVar()
+            self.col_entries[colnum] = Entry(window, textvariable=self.col_values[colnum])
+            self.col_entries[colnum].grid(row=rownum, column=1)
             rownum += 1
+            colnum += 1
 
-        addBtn = Button(window, text="Add New Recipe", command=self.add_command)
+        addBtn = Button(window, text="Add New Row", command=self.add_command)
         addBtn.config(width=13)
         addBtn.grid(row=rownum, column=0, pady=5, ipady=5, padx=5)
 
@@ -79,30 +88,56 @@ class Window(object):
         deleteBtn.config(width=13)
         deleteBtn.grid(row=rownum+1, column=1, ipady=5)
 
-        self.errorTextVar = StringVar()
-        errorLbl = Label(window, textvariable=self.errorTextVar)
-        errorLbl.grid(row=rownum+2, column=0)
+        self.msgTextVar = StringVar()
+        msgLbl = Label(window, textvariable=self.msgTextVar)
+        msgLbl.grid(row=rownum+2, column=0)
+
+    # BACKEND FUNCTIONS
 
     def getSelection(self, event):
-        print(event)
+        if self.list.curselection() != ():
+            index = self.list.curselection()[0]
+            self.selection = self.list.get(index)
+            self.clear_command()
+            entry = db.getEntry(self.selection)
+            n = 1
+            for c in self.col_entries:
+                c.insert(END,entry[n])
+                n+=1
 
     def search_command(self):
         print("Search")
 
     def view_command(self):
-        print("View")
+        self.list.delete(0,END)
+        for row in db.view():
+            print(row)
+            self.list.insert(END,row[1])
 
     def add_command(self):
-        print("Add")
+        values = []
+        for c in self.col_values:
+            values.append(c.get())
+        res = db.insert(values)
+        if (res):
+            self.message("New row added")
+            self.clear_command()
+        else:
+            self.message("Error adding new row")
 
     def clear_command(self):
-        print("clear")
+        for c in self.col_entries:
+            c.delete(0,END)
+        self.message("")
 
     def update_command(self):
         print("update")
 
     def delete_command(self):
         print("Delete")
+
+    def message(self, msg):
+        self.msgTextVar.set(msg)
 
 
 if __name__ == "__main__":
@@ -123,9 +158,9 @@ if __name__ == "__main__":
             print("Error, please retry")
 
     print(columns)
+    db = Database(dbname, tablename, columns)
 
     # load window
     window = Tk()
-    Window(window, tablename, columns)
+    Window(window, db, tablename, columns)
     window.mainloop()
-

@@ -5,22 +5,34 @@ class Database:
     def __init__(self, db, tablename, columns):
         self.con = sq.connect(db)
         self.cur = self.con.cursor()
-        cr_str = "CREATE TABLE IF NOT EXISTS " + tablename + "(Id INTEGER PRIMARY KEY)"
+        self.table = tablename
+        self.columns = columns
+        cr_str = "CREATE TABLE IF NOT EXISTS " + self.table + "(Id INTEGER PRIMARY KEY)"
         print(cr_str)
         self.cur.execute(cr_str)
-        for col in columns.keys():
-            al_str = "ALTER TABLE " + tablename + " ADD COLUMN " + col + " " + columns[col]
+        for col in self.columns.keys():
+            al_str = "ALTER TABLE " + self.table + " ADD COLUMN " + col + " " + self.columns[col]
             self.cur.execute(al_str)
-            
-    def insert(self, tablename, columns, values):
+
+    def view(self):
+        self.cur.execute("SELECT * FROM " + self.table)
+        rows = self.cur.fetchall()
+        return rows
+
+    def insert(self, values):
         col_str = ""
-        for i in columns.keys():
-            col_str = i + ","
-        col_str += col_str[:-1]
-        
+        for i in self.columns.keys():
+            col_str += i + ","
+        col_str = col_str[:-1]
         num_values = len(values)
         q_str = "?," * num_values
-        q_str = q_str[:-1]    
-        in_str = "INSERT INTO " + tablename + "(" + col_str + ") VALUES(" + q_str + ")"
+        q_str = q_str[:-1]
+        in_str = "INSERT INTO " + self.table + "(" + col_str + ") VALUES(" + q_str + ")"
         print(in_str)
-        self.cur.execute(in_str, values)
+        res = self.cur.execute(in_str, values)
+        return res
+
+    def getEntry(self, value):
+        self.cur.execute("SELECT * FROM " + self.table + " WHERE " + list(self.columns.keys())[0] + "=?", (value,))
+        row = self.cur.fetchone()
+        return row

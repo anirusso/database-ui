@@ -131,10 +131,21 @@ class Window(object):
         self.message("")
 
     def update_command(self):
-        print("update")
+        values = []
+        for c in self.col_values:
+            values.append(c.get())
+        res = db.update(values)
+        self.view_command()
+        self.clear_command()
 
     def delete_command(self):
-        print("Delete")
+        if self.list.curselection() != ():
+            id = db.getEntry(self.selection)[0]
+            db.delete(id)
+            self.view_command()
+            self.clear_command()
+        else:
+            self.message("Select an entry to delete")
 
     def message(self, msg):
         self.msgTextVar.set(msg)
@@ -157,7 +168,6 @@ if __name__ == "__main__":
         else:
             print("Error, please retry")
 
-    print(columns)
     db = Database(dbname, tablename, columns)
 
     # load window
